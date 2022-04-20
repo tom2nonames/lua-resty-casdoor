@@ -95,11 +95,6 @@ function _M.get_auth_link(self, redirect_uri, state, response_type, scope )
     local body = res.body
     local headers = res.headers
 
-    print("link url: ", url)
-    print("link query: ", cjson.encode(query))
-    print("link data: ", body)
-    print("link status: ", status_code)
-    print("link headers:", cjson.encode(headers))
     if status_code ~= 200 then
         return nil, "error: ", cjson.encode(res)
     end
@@ -152,9 +147,18 @@ function _M.get_oauth_token(self, code, state)
  
     ngx.log(ngx.DEBUG, body)
     local data = cjson.decode(body)
-    local token = data.access_token
 
-    return token, err
+    local token = data.access_token
+    if not token then
+        return nil, "failed when accessing token: no access_token contained"
+    end
+
+    local expires_in = data.expires_in
+    if not expires_in or expires_in == 0 then
+        return nil, "failed when accessing token: invalid access_token"
+    end
+
+    return data, err
 
 end
 
@@ -198,9 +202,18 @@ function _M.refresh_oauth_token(self, refresh_token, scope)
     end
  
     local data = cjson.decode(body)
-    local token = data.access_token
 
-    return token, err
+    local token = data.access_token
+    if not token then
+        return nil, "failed when accessing token: no access_token contained"
+    end
+
+    local expires_in = data.expires_in
+    if not expires_in or expires_in == 0 then
+        return nil, "failed when accessing token: invalid access_token"
+    end
+
+    return data, err
 end
 
 
