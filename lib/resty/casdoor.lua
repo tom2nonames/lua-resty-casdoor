@@ -220,7 +220,11 @@ end
 function _M.parse_jwt_token(self, token)
 
     local jwt_obj = jwt:verify(self.auth_config.JwtPublicKey, token)
-    return jwt_obj, jwt_obj["reason"]
+    local reason  = nil
+    if not jwt_obj.verified then
+        reason = jwt_obj["reason"]
+    end
+    return jwt_obj, reason
 end
 
 local function get_signin_url(self, redirect_uri)
