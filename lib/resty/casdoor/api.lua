@@ -120,8 +120,8 @@ return {
         update        = { method = "GET" , uri = "/api/update-application" },
     },
     service = {
-        send_email    = { method = "POST", uri = "/api/api/send-email",         body = { casdoor_schema.emailForm } },
-        send_sms      = { method = "POST", uri = "/api/api/send-sms",           body = { casdoor_schema.smsForm } },
+        send_email    = { method = "POST", uri = "/api/send-email",         body = { casdoor_schema.emailForm } },
+        send_sms      = { method = "POST", uri = "/api/send-sms",           body = { casdoor_schema.smsForm } },
     },
     record = {
         get           = { method = "GET" , uri = "/api/get-records" },
