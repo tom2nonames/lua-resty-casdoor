@@ -255,7 +255,8 @@ local smsForm = {
         receivers = {
             type = "array",
             items = { type = "string" }
-        }
+        },
+        organizationId = { type = "string" }
     }
 }
 
