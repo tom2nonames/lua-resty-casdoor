@@ -10,6 +10,7 @@ return {
         delete        = { method = "POST", uri = "/api/delete-application",     body = casdoor_schema.application , var = {"name"} },
         get           = { method = "GET" , uri = "/api/get-application" },
         list          = { method = "GET" , uri = "/api/get-applications" },
+        list_by_org   = { method = "GET" , uri = "/api/get-organization-applications" },
         get_by_user   = { method = "GET" , uri = "/api/get-user-application" },
         update        = { method = "POST", uri = "/api/update-application",     body = casdoor_schema.application },
     },
@@ -22,10 +23,17 @@ return {
     },
     account = {
         get           = { method = "GET" , uri = "/api/get-account" },
-        reset_email_or_phone 
+        reset_email_or_phone
                       = { method = "POST", uri = "/api/reset-email-or-phone" },
         set_password  = { method = "POST", uri = "/api/set-password" },
         userinfo      = { method = "GET",  uri = "/api/userinfo" },
+    },
+    model = {
+        add           = { method = "POST", uri = "/api/add-model" },
+        delete        = { method = "POST", uri = "/api/delete-model" },
+        get           = { method = "GET" , uri = "/api/get-model" },
+        list          = { method = "GET" , uri = "/api/get-models" },
+        update        = { method = "POST", uri = "/api/update-model" },
     },
     organization = {
         add           = { method = "POST", uri = "/api/add-organization" ,      body = casdoor_schema.organization },
@@ -112,12 +120,17 @@ return {
         update        = { method = "POST", uri = "/api/update-webhook" },
     },
     login = {
-        human_check   = { method = "GET" , uri = "/api/get-human-check" },
+        get_captcha   = { method = "GET" , uri = "/api/get-captcha" },
+        get_app_login   = { method = "GET" , uri = "/api/get-app-login" },
+        --human_check   = { method = "GET" , uri = "/api/get-human-check" },
         login         = { method = "POST", uri = "/api/login" },
         logout        = { method = "POST", uri = "/api/logout" },
         signup        = { method = "POST", uri = "/api/signup" },
         unlink        = { method = "POST", uri = "/api/unlink" },
-        update        = { method = "GET" , uri = "/api/update-application" },
+        webauthn_signin_begin   = { method = "GET" , uri = "/api/webauthn/signin/begin" },
+        webauthn_signin_finish  = { method = "POST" , uri = "/api/webauthn/signin/finish" },
+
+        --update        = { method = "GET" , uri = "/api/update-application" },
     },
     service = {
         send_email    = { method = "POST", uri = "/api/send-email",         body = { casdoor_schema.emailForm } },
@@ -131,8 +144,10 @@ return {
         introspect    = { method = "POST", uri = "/api/login/oauth/introspect" },
     },
     verification = {
-        send_verfig_code   
+        send_verfig_code
                       = { method = "POST", uri = "/api/send-verification-code" },
+        verify_captcha
+                      = { method = "POST", uri = "/api/verify-captcha" },
     }
 
 }

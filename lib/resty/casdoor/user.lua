@@ -44,7 +44,7 @@ local apis = casdoor_api.user
 
 function _M:add(user)
     user.owner = self.auth_config.OrganizationName
-    local id = user.owner .. "/ " .. user.name
+    local id = user.owner .. "/" .. user.name
     local api = apis["add"]
 
     if not api then
@@ -228,7 +228,7 @@ end
 
 function _M:update(user, columns)
     user.owner = self.auth_config.OrganizationName
-    local id = user.owner .. "/ " .. user.name
+    local id = user.owner .. "/" .. user.name
 
     local query = { id = id, columns = table.concat(columns, ",") }
 
@@ -263,7 +263,7 @@ end
 
 function _M:check_password(user)
     user.owner = self.auth_config.OrganizationName
-    local id = user.owner .. "/ " .. user.name
+    local id = user.owner .. "/" .. user.name
 
     local api = apis["check_password"]
  

@@ -18,7 +18,7 @@ if not ok then
     new_tab = function (narr, nrec) return {} end
 end
 
-local _M = new_tab(0, 10) 
+local _M = new_tab(0, 10)
 
 _M._VERSION = '0.1'
 
@@ -46,10 +46,10 @@ function _M.init_config(self, config)
     local validator = jsonschema.generate_validator(schema_def)
 
     local ok, err = validator(config)
-    
+
     if ok then
         self.auth_config = config
-    end 
+    end
 
     return ok, err
 end
@@ -87,7 +87,7 @@ function _M.get_auth_link(self, redirect_uri, state, response_type, scope )
           httpc:set_timeout(1000)
     local res, err = httpc:request_uri(url, params)
 
-    if not res or err then 
+    if not res or err then
         return nil, err
     end
 
@@ -100,7 +100,7 @@ function _M.get_auth_link(self, redirect_uri, state, response_type, scope )
     end
 
     local data = cjson.decode(body)
-   
+
     return data["url"], err
 end
 
@@ -133,7 +133,7 @@ function _M.get_oauth_token(self, code, state)
 
     local res, err = httpc:request_uri(url, params)
 
-    if not res or err then 
+    if not res or err then
         return nil, err
     end
 
@@ -142,9 +142,9 @@ function _M.get_oauth_token(self, code, state)
     local headers = res.headers
 
     if status_code ~= 200 then
-        return nil, "error: ", cjson.encode(res)
+        return nil, "error: " .. body
     end
- 
+
     ngx.log(ngx.DEBUG, body)
     local data = cjson.decode(body)
 
@@ -189,7 +189,7 @@ function _M.refresh_oauth_token(self, refresh_token, scope)
 
     local res, err = httpc:request_uri(url, params)
 
-    if not res or err then 
+    if not res or err then
         return nil, err
     end
 
@@ -198,9 +198,9 @@ function _M.refresh_oauth_token(self, refresh_token, scope)
     local headers = res.headers
 
     if status_code ~= 200 then
-        return nil, "error: ", cjson.encode(res)
+        return nil, "error: " .. body
     end
- 
+
     local data = cjson.decode(body)
 
     local token = data.access_token
@@ -242,8 +242,8 @@ _M.get_signin_url = get_signin_url
 function _M.get_signup_url(self, enabled_password, redirect_uri)
 
     if enabled_password then
-        return string.format("%s/signup/%s", 
-                             self.auth_config.Endpoint, 
+        return string.format("%s/signup/%s",
+                             self.auth_config.Endpoint,
                              self.auth_config.ApplicationName)
     else
         local signin_url = get_signin_url(self, redirect_uri)
@@ -257,7 +257,7 @@ function _M.get_user_profile_url(self, user_name, access_token)
         param = string.format("?access_token=%s", access_token)
     end
 
-    return string.format("%s/users/%s/%s%s", 
+    return string.format("%s/users/%s/%s%s",
                          self.auth_config.Endpoint,
                          self.auth_config.OrganizationName,
                          user_name, param )
@@ -269,6 +269,201 @@ function _M.get_my_profile_url(self, access_token)
         param = string.format("?access_token=%s", access_token)
     end
     return string.format("%s/account%s", self.auth_config.Endpoint, param )
+end
+
+function _M.enforce(self, token, item)
+
+    local headers = {
+        ["Content-Type"] = "application/json; charset=utf-8",
+        ["Authorization"] = "Bearer " .. token
+        --["Cookie"] = "casdoor_session_id=" .. session_id
+    }
+
+    local url = self.auth_config.Endpoint .. "/api/enforce"
+
+    local params = {
+        method  = "POST",
+        headers = headers,
+        body =cjson.encode(item),
+        ssl_verify = false,
+        keepalive_timeout = 600,
+        keepalive_pool    = 50
+    }
+
+    local httpc = http.new()
+          httpc:set_timeout(1000)
+
+    local res, err = httpc:request_uri(url, params)
+
+    if not res or err then
+        return nil, err
+    end
+
+    local status_code = res.status
+    local body = res.body
+    local headers = res.headers
+
+    if status_code ~= 200 then
+        return nil, "error: " .. body
+    end
+
+    ngx.log(ngx.DEBUG, body)
+    local data = cjson.decode(body)
+
+    return data, err
+end
+
+function _M.batch_enforce(self, token, items)
+    local headers = {
+        ["Content-Type"] = "application/json; charset=utf-8",
+        ["Authorization"] = "Bearer " .. token
+    }
+
+    local url = self.auth_config.Endpoint .. "/api/batch-enforce"
+
+    local params = {
+        method  = "POST",
+        headers = headers,
+        body = cjson.encode(items),
+        ssl_verify = false,
+        keepalive_timeout = 600,
+        keepalive_pool    = 50
+    }
+
+    local httpc = http.new()
+          httpc:set_timeout(1000)
+
+    local res, err = httpc:request_uri(url, params)
+
+    if not res or err then
+        return nil, err
+    end
+
+    local status_code = res.status
+    local body = res.body
+    local headers = res.headers
+
+    if status_code ~= 200 then
+        return nil, "error: " .. res.body
+    end
+
+    local data = cjson.decode(body)
+
+    return data, err
+end
+
+function _M.get_all_objects(self, token)
+    local headers = {
+        ["Authorization"] = "Bearer " .. token
+        --["Cookie"] = "casdoor_session_id=" .. session_id
+    }
+
+    local url = self.auth_config.Endpoint .. "/api/get-all-objects"
+
+    local params = {
+        method  = "GET",
+        headers = headers,
+        ssl_verify = false,
+        keepalive_timeout = 600,
+        keepalive_pool    = 50
+    }
+
+    local httpc = http.new()
+          httpc:set_timeout(1000)
+
+    local res, err = httpc:request_uri(url, params)
+
+    if not res or err then
+        return nil, err
+    end
+
+    local status_code = res.status
+    local body = res.body
+    local headers = res.headers
+
+    if status_code ~= 200 then
+        return nil, "error: " .. body
+    end
+
+    local data = cjson.decode(body)
+
+    return data, err
+end
+
+function _M.get_all_actions(self, token)
+    local headers = {
+      ["Authorization"] = "Bearer " .. token
+      --["Cookie"] = "casdoor_session_id=" .. session_id
+    }
+
+    local url = self.auth_config.Endpoint .. "/api/get-all-actions"
+
+    local params = {
+        method  = "GET",
+        headers = headers,
+        ssl_verify = false,
+        keepalive_timeout = 600,
+        keepalive_pool    = 50
+    }
+
+    local httpc = http.new()
+          httpc:set_timeout(1000)
+
+    local res, err = httpc:request_uri(url, params)
+
+    if not res or err then
+        return nil, err
+    end
+
+    local status_code = res.status
+    local body = res.body
+    local headers = res.headers
+
+    if status_code ~= 200 then
+        return nil, "error: " .. body
+    end
+
+    local data = cjson.decode(body)
+
+    return data, err
+end
+
+function _M.get_all_roles(self, token)
+    local headers = {
+        ["Authorization"] = "Bearer " .. token
+        --["Cookie"] = "casdoor_session_id=" .. session_id
+    }
+
+    local url = self.auth_config.Endpoint .. "/api/get-all-roles"
+
+    local params = {
+        method  = "GET",
+        headers = headers,
+        ssl_verify = false,
+        keepalive_timeout = 600,
+        keepalive_pool    = 50
+    }
+
+    local httpc = http.new()
+          httpc:set_timeout(1000)
+
+    local res, err = httpc:request_uri(url, params)
+
+    if not res or err then
+        return nil, err
+    end
+
+    local status_code = res.status
+    local body = res.body
+    local headers = res.headers
+
+    if status_code ~= 200 then
+        return nil, "error: " .. body
+    end
+
+    local data = cjson.decode(body)
+
+    return data, err
 end
 
 return _M
