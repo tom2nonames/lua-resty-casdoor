@@ -163,7 +163,7 @@ function _M.get_oauth_token(self, code, state)
 end
 
 function _M.refresh_oauth_token(self, refresh_token, scope)
-    local grant_type = "authorization_code"
+    local grant_type = "refresh_token"
 
     local opts = {
         grant_type      = grant_type,
