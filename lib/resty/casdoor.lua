@@ -31,7 +31,7 @@ local path_options = {
     token = "/api/login/oauth/access_token",
     introspect ="/api/login/oauth/introspect",
     userinfo = "/api/userinfo",
-    refresh_token = "api/login/oauth/refresh_token"
+    refresh_token = "/api/login/oauth/refresh_token"
 }
 
 function _M.new(self)
