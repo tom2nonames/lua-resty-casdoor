@@ -5,7 +5,6 @@ local cjson      = require("cjson")
 
 local casdoor_schema = require("resty.casdoor.schema")
 
-
 local ngx = ngx
 local ngx_log = ngx.log
 local ngx_DEBUG = ngx.DEBUG
@@ -28,10 +27,17 @@ local path_options = {
     api = "/api",
     login_authorize  = "/login/oauth/authorize",
     signup_authirize = "/api/signup/oauth/authorize",
-    token = "/api/login/oauth/access_token",
-    introspect ="/api/login/oauth/introspect",
-    userinfo = "/api/userinfo",
-    refresh_token = "/api/login/oauth/refresh_token"
+    token            = "/api/login/oauth/access_token",
+    introspect       = "/api/login/oauth/introspect",
+    refresh_token    = "/api/login/oauth/refresh_token",
+    token_logout     = "/api/login/oauth/logout",
+    logout           = "/api/logout",
+    userinfo         = "/api/userinfo",
+    enforce          = "/api/enforce",
+    batch_enforce    = "/api/batch-enforce",
+    get_all_roles    = "/api/get-all-actions",
+    get_all_objects  = "/api/get-all-objects",
+    get_all_roles    = "/api/get-all-roles",
 }
 
 function _M.new(self)
@@ -53,6 +59,7 @@ function _M.init_config(self, config)
 
     return ok, err
 end
+
 --[[
     http://10.66.61.37:8000/api/login/oauth/authorize
     http://10.66.61.37:8000/login/oauth/authorize
@@ -65,7 +72,9 @@ function _M.get_auth_link(self, redirect_uri, state, response_type, scope )
     response_type = response_type or "code"
     scope = scope or "read"
 
-    local url = self.auth_config.Endpoint .. path_options.login_authorize
+    local url = sfmt( "%s%s",
+                      self.auth_config.Endpoint,
+                      path_options.login_authorize)
 
     local query = {
         client_id = self.auth_config.ClientId,
@@ -117,7 +126,9 @@ function _M.get_oauth_token(self, code, state)
         code            = code
      }
 
-    local url = self.auth_config.Endpoint .. path_options.token
+    local url = sfmt( "%s%s",
+                      self.auth_config.Endpoint,
+                      path_options.token )
 
     local params = {
         method  = "POST",
@@ -173,7 +184,9 @@ function _M.refresh_oauth_token(self, refresh_token, scope)
         scope           = scope
      }
 
-    local url = self.auth_config.Endpoint .. path_options.refresh_token
+    local url = sfmt( "%s%s",
+                      self.auth_config.Endpoint,
+                      path_options.refresh_token )
 
     local params = {
         method  = "POST",
@@ -216,6 +229,94 @@ function _M.refresh_oauth_token(self, refresh_token, scope)
     return data, err
 end
 
+function _M.oauth_token_logout(self, token, post_logout_redirect_uri)
+
+    local opts = {
+        id_token_hint = token,
+        state =  self.auth_config.ApplicationName,
+        post_logout_redirect_uri = post_logout_redirect_uri
+     }
+
+    local headers = {
+        ["Content-Type"] = "application/json; charset=utf-8",
+    }
+
+    local url = sfmt( "%s%s",
+                      self.auth_config.Endpoint,
+                      path_options.token_logout)
+
+    local params = {
+        method  = "GET",
+        headers = headers,
+        query    = opts,
+        ssl_verify = false,
+        keepalive_timeout = 600,
+        keepalive_pool    = 50
+    }
+
+    local httpc = http.new()
+          httpc:set_timeout(1000)
+
+    local res, err = httpc:request_uri(url, params)
+
+    if not res or err then
+        return nil, err
+    end
+
+    local status_code = res.status
+    local body = res.body
+    local headers = res.headers
+
+    ngx.log(ngx.DEBUG, url)
+    ngx.log(ngx.DEBUG, body)
+
+    local data = cjson.decode(body)
+    if status_code == 200 and data and data.status == "ok" then
+        return data, nil
+    end
+
+    return nil, body
+end
+
+function _M.logout(self, token)
+
+    local headers = {
+        ["Content-Type"] = "application/json; charset=utf-8",
+        ["Authorization"] = sfmt("Bearer %s", token)
+    }
+
+    local url = sfmt("%s%s", self.auth_config.Endpoint, path_options.logout)
+
+    local params = {
+        method  = "POST",
+        headers =  headers,
+        ssl_verify = false,
+        keepalive_timeout = 600,
+        keepalive_pool    = 50
+    }
+
+    local httpc = http.new()
+          httpc:set_timeout(6000)
+
+    local res, err = httpc:request_uri(url, params)
+
+    if not res or err then
+        return nil , err
+    end
+
+    local status_code = res.status
+    local body = res.body
+    local headers = res.headers
+
+
+    local data = cjson.decode(body)
+
+    if status_code == 200 and data and data.status == "ok" then
+        return data, nil
+    end
+
+    return nil, body
+end
 
 function _M.parse_jwt_token(self, token)
 
@@ -231,56 +332,56 @@ local function get_signin_url(self, redirect_uri)
     local scope = "read"
     local state = self.auth_config.ApplicationName
 
-    return string.format("%s/login/oauth/authorize?client_id=%s&response_type=code&redirect_uri=%s&scopt=%s",
-                         self.auth_config.Endpoint,
-                         self.auth_config.ClientId,
-                         ngx.escape_uri(redirect_uri),
-                         scope, state )
+    return sfmt("%s/login/oauth/authorize?client_id=%s&response_type=code&redirect_uri=%s&scopt=%s",
+                self.auth_config.Endpoint,
+                self.auth_config.ClientId,
+                ngx.escape_uri(redirect_uri),
+                scope, state )
 end
 _M.get_signin_url = get_signin_url
 
 function _M.get_signup_url(self, enabled_password, redirect_uri)
 
     if enabled_password then
-        return string.format("%s/signup/%s",
-                             self.auth_config.Endpoint,
-                             self.auth_config.ApplicationName)
+        return sfmt("%s/signup/%s",
+                    self.auth_config.Endpoint,
+                    self.auth_config.ApplicationName)
     else
         local signin_url = get_signin_url(self, redirect_uri)
-        return singin_url:gsub("%/login/oauth/authorize", "/signup/oauth/authorize")
+        return signin_url:gsub("%/login/oauth/authorize", "/signup/oauth/authorize")
     end
 end
 
 function _M.get_user_profile_url(self, user_name, access_token)
     local param = ""
     if access_token ~= "" then
-        param = string.format("?access_token=%s", access_token)
+        param = sfmt("?access_token=%s", access_token)
     end
 
-    return string.format("%s/users/%s/%s%s",
-                         self.auth_config.Endpoint,
-                         self.auth_config.OrganizationName,
-                         user_name, param )
+    return sfmt("%s/users/%s/%s%s",
+                self.auth_config.Endpoint,
+                self.auth_config.OrganizationName,
+                user_name, param )
 end
 
 function _M.get_my_profile_url(self, access_token)
     local param = ""
     if access_token ~= "" then
-        param = string.format("?access_token=%s", access_token)
+        param = sfmt("?access_token=%s", access_token)
     end
-    return string.format("%s/account%s", self.auth_config.Endpoint, param )
+    return sfmt("%s/account%s", self.auth_config.Endpoint, param )
 end
 
 function _M.enforce(self, token, item)
 
     local headers = {
         ["Content-Type"] = "application/json; charset=utf-8",
-        ["Authorization"] = "Bearer " .. token
-        --["Cookie"] = "casdoor_session_id=" .. session_id
+        ["Authorization"] = sfmt("Bearer %s", token)
     }
 
-    local url = self.auth_config.Endpoint .. "/api/enforce"
-
+    local url = sfmt("%s%s",
+                     self.auth_config.Endpoint,
+                     path_options.enforce)
     local params = {
         method  = "POST",
         headers = headers,
@@ -316,10 +417,11 @@ end
 function _M.batch_enforce(self, token, items)
     local headers = {
         ["Content-Type"] = "application/json; charset=utf-8",
-        ["Authorization"] = "Bearer " .. token
+        ["Authorization"] = sfmt("Bearer %s", token)
     }
 
-    local url = self.auth_config.Endpoint .. "/api/batch-enforce"
+    local url = sfmt( "%s%s", self.auth_config.Endpoint,
+                      path_options.batch_enforce)
 
     local params = {
         method  = "POST",
@@ -354,11 +456,11 @@ end
 
 function _M.get_all_objects(self, token)
     local headers = {
-        ["Authorization"] = "Bearer " .. token
-        --["Cookie"] = "casdoor_session_id=" .. session_id
+        ["Authorization"] = sfmt("Bearer %s", token)
     }
 
-    local url = self.auth_config.Endpoint .. "/api/get-all-objects"
+    local url = sfmt( "%s%s", self.auth_config.Endpoint,
+                      path_options.get_all_objects)
 
     local params = {
         method  = "GET",
@@ -392,11 +494,11 @@ end
 
 function _M.get_all_actions(self, token)
     local headers = {
-      ["Authorization"] = "Bearer " .. token
-      --["Cookie"] = "casdoor_session_id=" .. session_id
+      ["Authorization"] = sfmt("Bearer %s", token)
     }
 
-    local url = self.auth_config.Endpoint .. "/api/get-all-actions"
+    local url = sfmt( "%s%s", self.auth_config.Endpoint,
+                      path_options.get_all_actions )
 
     local params = {
         method  = "GET",
@@ -430,11 +532,11 @@ end
 
 function _M.get_all_roles(self, token)
     local headers = {
-        ["Authorization"] = "Bearer " .. token
-        --["Cookie"] = "casdoor_session_id=" .. session_id
+        ["Authorization"] = sfmt("Bearer %s", token)
     }
 
-    local url = self.auth_config.Endpoint .. "/api/get-all-roles"
+    local url = sfmt( "%s%s", self.auth_config.Endpoint,
+                      path_options.get_all_roles)
 
     local params = {
         method  = "GET",
