@@ -80,6 +80,7 @@ return {
         get           = { method = "GET" , uri = "/api/get-role" },
         list          = { method = "GET" , uri = "/api/get-roles" },
         update        = { method = "POST", uri = "/api/update-role",            body = casdoor_schema.role },
+        set           = { method = "POST", uri = "/api/set-roles",              boy  = casdoor_schema.set_roles }
     },
     syncer = {
         add           = { method = "POST", uri = "/api/add-syncer" },

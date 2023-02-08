@@ -24,11 +24,11 @@ local auth_config = {
         JwtPublicKey    = { type = "string" },
         OrganizationName= { type = "string" },
         ApplicationName = { type = "string" },
-        CallbackPath    = { type = "string", 
+        CallbackPath    = { type = "string",
                             default = "/casdoor/signin-callback" },
         Scope           = { type = "string" }
     },
-    required = { 
+    required = {
         "Endpoint", "ClientId", "ClientSecret", "JwtPublicKey",
         "OrganizationName", "ApplicationName"
     }
@@ -41,7 +41,7 @@ local application = {
         owner = text,
         name = text,
         createdTime = text,
-        
+
         displayName = text,
         logo = text,
         homepageUrl = text,
@@ -123,7 +123,7 @@ local user = {
         email = text,
         phone = text,
         location = text,
-        address = { 
+        address = {
             type = "array" ,
             items = { type = "string" }
         },
@@ -234,6 +234,16 @@ local permission = {
             items = { type = "string" }
         }
     }
+}
+
+_M.set_roles = {
+    userID = {
+        type = "string"
+    },
+    roles = {
+        type = "array",
+        items = { type = "string" }
+    },
 }
 
 _M.permission = permission

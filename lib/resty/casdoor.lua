@@ -275,7 +275,7 @@ function _M.oauth_token_logout(self, token, post_logout_redirect_uri)
         return data, nil
     end
 
-    return nil, body
+    return nil, "err: " .. body
 end
 
 function _M.logout(self, token)
@@ -315,7 +315,7 @@ function _M.logout(self, token)
         return data, nil
     end
 
-    return nil, body
+    return nil, "err: " .. body
 end
 
 function _M.parse_jwt_token(self, token)
