@@ -243,7 +243,7 @@ function _M.oauth_token_logout(self, token, post_logout_redirect_uri)
 
     local url = sfmt( "%s%s",
                       self.auth_config.Endpoint,
-                      path_options.token_logout)
+                      path_options.logout)
 
     local params = {
         method  = "GET",
@@ -278,18 +278,24 @@ function _M.oauth_token_logout(self, token, post_logout_redirect_uri)
     return nil, "err: " .. body
 end
 
-function _M.logout(self, token)
+function _M.logout(self, token, post_logout_redirect_uri)
 
     local headers = {
         ["Content-Type"] = "application/json; charset=utf-8",
-        ["Authorization"] = sfmt("Bearer %s", token)
+        --["Authorization"] = sfmt("Bearer %s", token)
     }
+    local opts = {
+        id_token_hint = token,
+        state =  self.auth_config.ApplicationName,
+        post_logout_redirect_uri = post_logout_redirect_uri
+     }
 
     local url = sfmt("%s%s", self.auth_config.Endpoint, path_options.logout)
 
     local params = {
         method  = "POST",
         headers =  headers,
+        query    = opts,
         ssl_verify = false,
         keepalive_timeout = 600,
         keepalive_pool    = 50
