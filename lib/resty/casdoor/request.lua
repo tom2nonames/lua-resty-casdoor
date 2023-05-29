@@ -1,6 +1,8 @@
 local setmetatable = setmetatable
 
 local cjson  = require("cjson")
+cjson.decode_array_with_array_mt(true)
+
 local http   = require("resty.http")
 local mime_sniff = require("mime_sniff")
 
@@ -29,7 +31,7 @@ end
 
 local function do_request(self, url, method, query, content, content_type)
     local headers = {
-        ["Content-Type"] = content_type or "text/plain;charset=UTF-8", 
+        ["Content-Type"] = content_type or "text/plain;charset=UTF-8",
         ["Authorization"] = "Basic " .. ngx.encode_base64( self.auth_config.ClientId .. ":" .. self.auth_config.ClientSecret ) -- "application/json; charset=utf-8",
       }
     local params = {
@@ -41,16 +43,17 @@ local function do_request(self, url, method, query, content, content_type)
         keepalive_timeout = 600,
         keepalive_pool    = 50
     }
+
     local httpc = http.new()
           httpc:set_timeout(1000)
-    
+
     local res, err = httpc:request_uri(url, params)
 
 
     if not res then
         return nil , err
     end
- 
+
     local body = res.body --res:read_body()
     res:read_trailers()
     local header  = res.headers

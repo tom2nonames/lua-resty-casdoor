@@ -14,6 +14,8 @@ local rawget = rawget
 local select = select
 
 local cjson = require("cjson")
+cjson.decode_array_with_array_mt(true)
+
 local jsonschema = require("jsonschema")
 
 local casdoor_api    = require("resty.casdoor.api")
@@ -34,8 +36,8 @@ _M._VERSION = '0.1'
 local mt = { __index = _M }
 
 function _M.new(self, conf)
-    return setmetatable({ 
-        auth_config = conf, 
+    return setmetatable({
+        auth_config = conf,
         _req = casdoor_request:new(conf)
     }, mt)
 end
@@ -77,23 +79,23 @@ function _M:delete(user)
 
     user.owner = self.auth_config.OrganizationName
     local id = user.owner .. "/ " .. user.name
-     
+
      local api = apis["delete"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local content = cjson.encode(user)
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "POST" then
          res, err = req:post(url, { id = id }, content, content_type_json)
      end
- 
+
      return res, err
 end
 
@@ -101,15 +103,15 @@ function _M:get(name)
     local id = self.auth_config.OrganizationName .. "/" .. name
 
     local api = apis["get"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url, { id = id })
      end
@@ -124,15 +126,15 @@ function _M:get_by_email(email)
     }
 
     local api = apis["get"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url, query)
      end
@@ -143,15 +145,15 @@ end
 function _M:get_global()
 
     local api = apis["get_global"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url)
      end
@@ -167,15 +169,15 @@ function _M:get_sorted(sorter, limit)
     }
 
     local api = apis["get_sorted"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url, query)
      end
@@ -187,15 +189,15 @@ function _M:list()
     local owner = self.auth_config.OrganizationName
 
     local api = apis["list"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url, { owner = owner })
      end
@@ -210,15 +212,15 @@ function _M:count(is_online)
     }
 
     local api = apis["count"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url, query)
      end
@@ -233,7 +235,7 @@ function _M:update(user, columns)
     local query = { id = id, columns = table.concat(columns, ",") }
 
     local api = apis["update"]
- 
+
     if not api then
         return nil , "not found api defined."
     end
@@ -247,7 +249,7 @@ function _M:update(user, columns)
         return nil, err
     end
 
- 
+
     local content = cjson.encode(user)
 
     local req = self._req
@@ -266,7 +268,7 @@ function _M:check_password(user)
     local id = user.owner .. "/" .. user.name
 
     local api = apis["check_password"]
- 
+
     if not api then
         return nil , "not found api defined."
     end
@@ -280,7 +282,7 @@ function _M:check_password(user)
         return nil, err
     end
 
- 
+
     local content = cjson.encode(user)
 
     local req = self._req
