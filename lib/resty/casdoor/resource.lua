@@ -35,8 +35,8 @@ _M._VERSION = '0.1'
 local mt = { __index = _M }
 
 function _M.new(self, conf)
-    return setmetatable({ 
-        auth_config = conf, 
+    return setmetatable({
+        auth_config = conf,
         _req = casdoor_request:new(conf)
     }, mt)
 end
@@ -50,36 +50,41 @@ function _M:delete(name)
         owner = self.auth_config.OrganizationName,
         name  = name
     }
-     
+
      local api = apis["delete"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local content = cjson.encode(reso)
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "POST" then
          res, err = req:post(url, nil, content, content_type_json)
      end
- 
+
      return res, err
 end
 
-function _M:upload(user, tag, parent, full_file_path, file_content, created_time, description)
+function _M:upload(user, tag, parent, full_file_path, local_file_path, created_time, description)
+
+    local ngx_re = require "ngx.re"
+    local keys, err = ngx_re.split(full_file_path, "/")
+    local file_name = keys[#keys]
+
     local query = {
         owner = self.auth_config.OrganizationName,
         user  = user,
-        applcation = self.auth_config.ApplicationName,
+        application = self.auth_config.ApplicationName,
         tag = tag,
         parent = parent,
-        fullFilePath = full_file_path
+        fullFilePath = full_file_path -- "resource/" ..  self.auth_config.OrganizationName .. "/" .. user .. "/" .. file_name
     }
-    
+
     if created_time then
         query["createdTime"] = created_time
     end
@@ -89,23 +94,17 @@ function _M:upload(user, tag, parent, full_file_path, file_content, created_time
     end
 
     local api = apis["upload"]
- 
+
     if not api then
         return nil , "not found api defined."
     end
-
-    local schema_def = api.body
-    local validator = jsonschema.generate_validator(schema_def)
-
 
     local req = self._req
     local url = req:get_url(api.uri)
     local res, err
 
-    local content_type_json = mime_sniff.detect_content_type(file_content)
-
-    if api.method == "POST" then
-        res, err = req:post(url, query, file_content, content_type_json)
+    if api.method == "POST" and api.body == "file" then
+        res, err = req:file(url, query, local_file_path, file_name)
     end
 
     return res, err
