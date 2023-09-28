@@ -10,6 +10,12 @@ description = {
    license = "BSD License 2.0",
    labels = { "Casdoor", "OpenResty", "SDK", "Nginx" }
 }
+dependencies = {
+   "multipart-post >= 1.4-1",
+   "jsonschema >= 0.9.8-0",
+   "api7-lua-resty-http >= 0.2.1-0",
+   "api7-lua-resty-jwt >= 0.2.4-0"
+}
 build = {
    type = "builtin",
    modules = {
