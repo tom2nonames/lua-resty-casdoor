@@ -56,7 +56,7 @@ return {
         delete        = { method = "POST", uri = "/api/delete-permission",      body  = casdoor_schema.permission },
         get           = { method = "GET" , uri = "/api/get-permission" },
         list          = { method = "GET" , uri = "/api/get-permissions" },
-        update        = { method = "POST", uri = "/api/update-permission" },
+        update        = { method = "POST", uri = "/api/update-permission",      body = casdoor_schema.permission },
     },
     product = {
         add           = { method = "POST", uri = "/api/add-product" },
