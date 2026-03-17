@@ -34,8 +34,8 @@ _M._VERSION = '0.1'
 local mt = { __index = _M }
 
 function _M.new(self, conf)
-    return setmetatable({ 
-        auth_config = conf, 
+    return setmetatable({
+        auth_config = conf,
         _req = casdoor_request:new(conf)
     }, mt)
 end
@@ -43,7 +43,7 @@ end
 local apis = casdoor_api.permission
 
 function _M:add(pem)
-    
+
     local api = apis["add"]
 
     if not api then
@@ -78,23 +78,23 @@ function _M:delete(name)
         owner = self.auth_config.OrganizationName,
         name  = name
     }
-     
+
      local api = apis["delete"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local content = cjson.encode(pem)
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "POST" then
          res, err = req:post(url, nil, content, content_type_json)
      end
- 
+
      return res, err
 end
 
@@ -102,15 +102,15 @@ function _M:get(name)
     local id = self.auth_config.OrganizationName .. "/" .. name
 
     local api = apis["get"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url, { id = id })
      end
@@ -122,15 +122,15 @@ function _M:list(owner)
     local owner = owner or self.auth_config.OrganizationName
 
     local api = apis["list"]
- 
+
      if not api then
          return nil , "not found api defined."
      end
- 
+
      local req = self._req
      local url = req:get_url(api.uri)
      local res, err
- 
+
      if api.method == "GET" then
          res, err = req:get(url, { owner = owner })
      end
@@ -140,9 +140,9 @@ end
 
 function _M:update(pem)
     local id = self.auth_config.OrganizationName .. "/" .. pem.name
-    
+
     local api = apis["update"]
- 
+
     if not api then
         return nil , "not found api defined."
     end
@@ -156,7 +156,7 @@ function _M:update(pem)
         return nil, err
     end
 
- 
+
     local content = cjson.encode(pem)
 
     local req = self._req
